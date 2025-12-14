@@ -77,11 +77,13 @@ blueprint:
     2.00 (Dec-14-2025): Ported to zigbee2mqtt
 
   input:
-    remote_name:
-      name: Nazwa urządzenia w zigbee2mqtt (Friendly Name)
-      description: "Podaj friendly name urządzenia z zigbee2mqtt (np. 'hue_tap_dial_salon'). Możesz znaleźć to w interfejsie zigbee2mqtt."
+    remote_entity:
+      name: Philips Hue Tap Dial - Sensor Action
+      description: "Wybierz sensor 'action' swojego Hue Tap Dial z zigbee2mqtt (zwykle nazywa się 'sensor.nazwa_urządzenia_action')"
       selector:
-        text:
+        entity:
+          integration: mqtt
+          domain: sensor
     logbook_enabled:
       name: Enable logging to Logbook
       default: false
@@ -510,18 +512,18 @@ blueprint:
 mode: restart
 max_exceeded: silent
 trigger:
-  - platform: mqtt
-    topic: "zigbee2mqtt/{{ remote_name }}"
+  - platform: state
+    entity_id: !input remote_entity
 action:
   - variables:
-      payload: "{{ trigger.payload_json }}"
-      action: "{{ payload.action }}"
-      step_size: "{{ payload.action_step_size | default(0) }}"
-      step_mode: "{{ 'Up' if payload.action_rotation_angle_step_counter > 0 else 'Down' if payload.action_rotation_angle_step_counter is defined else 'None' }}"
+      remote_entity: !input remote_entity
+      action: "{{ states(remote_entity) }}"
+      step_size: "{{ state_attr(remote_entity, 'action_step_size') | default(0) }}"
+      rotation_angle: "{{ state_attr(remote_entity, 'action_rotation_angle_step_counter') | default(0) }}"
+      step_mode: "{{ 'Up' if rotation_angle > 0 else 'Down' if rotation_angle < 0 else 'None' }}"
       logbook_enabled: !input logbook_enabled
       small_rotation_max: !input small_rotation_max
       medium_rotation_max: !input medium_rotation_max
-      remote_name: !input remote_name
       helper_last_button_pressed: !input helper_last_button_pressed
       last_button_pressed: >
         {%- set helper_state = states(helper_last_button_pressed) -%}
@@ -532,7 +534,7 @@ action:
           - service: logbook.log
             data:
               name: Hue Tap Dial (zigbee2mqtt)
-              message: "Device: {{ remote_name }}, Action: {{ action }}, Step Size: {{ step_size }}, Step Mode: {{ step_mode }}"
+              message: "Device: {{ remote_entity }}, Action: {{ action }}, Step Size: {{ step_size }}, Rotation: {{ rotation_angle }}"
   - choose:
       - conditions: "{{ action == 'button_1_press' }}"
         sequence:
