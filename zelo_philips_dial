@@ -11,9 +11,10 @@ blueprint:
 
     ## Kluczowe funkcje
 
-    * Akcje dla przycisków: krótkie naciśnięcie, długie naciśnięcie, przytrzymanie
-    * Akcje dla pokrętła: step (pojedynczy krok), slow (wolne obracanie), fast (szybkie obracanie)
-    * Pokrętło może zapamiętać ostatnio naciśnięty przycisk i wykonywać różne akcje
+    * **Akcje dla przycisków**: krótkie naciśnięcie, długie naciśnięcie, przytrzymanie
+    * **Multi-press**: wykrywanie wielokrotnych naciśnięć (double, triple, quadruple, quintuple)
+    * **Akcje dla pokrętła**: step (pojedynczy krok), slow (wolne obracanie), fast (szybkie obracanie)
+    * **Rozszerzone sterowanie**: pokrętło może zapamiętać ostatnio naciśnięty przycisk
 
     ## Akcje przycisków
 
@@ -22,6 +23,13 @@ blueprint:
     * Short Release (zwolnienie po krótkim naciśnięciu)
     * Long Press/Hold (długie przytrzymanie - może się powtarzać)
     * Long Release (zwolnienie po długim przytrzymaniu)
+    
+    ### Multi-press (opcjonalnie)
+    Jeśli włączysz multi-press i utworzysz helpery (input_number):
+    * Double Press (2x naciśnięcie)
+    * Triple Press (3x naciśnięcie)
+    * Quadruple Press (4x naciśnięcie)
+    * Quintuple Press (5x naciśnięcie)
 
     ## Akcje pokrętła
 
@@ -30,14 +38,18 @@ blueprint:
     * Slow - wolne ciągłe obracanie
     * Fast - szybkie ciągłe obracanie
 
-    ## Rozszerzone sterowanie pokrętłem
+    ## Jak skonfigurować multi-press
 
-    Możesz skonfigurować różne akcje pokrętła dla każdego przycisku.
-    Wymaga utworzenia helpera input_number do zapamiętania ostatniego przycisku.
+    1. Włącz opcję "multi_press_enabled"
+    2. Ustaw czas między naciśnięciami (domyślnie 500ms)
+    3. Dla każdego przycisku który chcesz obsługiwać:
+       - Utwórz helper Input Number (min=0, max=10, step=1)
+       - Wybierz ten helper w odpowiedniej opcji
 
     ## Version History:
 
     2.00 (Dec-14-2025): Wersja dla zigbee2mqtt
+    2.01 (Dec-14-2025): Dodano wykrywanie multi-press
 
   input:
     device_friendly_name:
@@ -51,6 +63,55 @@ blueprint:
           friendly name to "Adrian_Przełącznik_Główny_HUE")
       selector:
         text:
+    multi_press_enabled:
+      name: Włącz wykrywanie multi-press (double, triple, etc.)
+      description: Wykrywa wielokrotne naciśnięcia przycisku w krótkim czasie
+      default: false
+      selector:
+        boolean: {}
+    multi_press_delay:
+      name: Multi-press - maksymalny czas między naciśnięciami (ms)
+      description: Jeśli naciśniesz przycisk ponownie w tym czasie, zostanie to wykryte jako multi-press
+      default: 500
+      selector:
+        number:
+          min: 200
+          max: 2000
+          step: 50
+          unit_of_measurement: ms
+          mode: box
+    helper_button_1_last_press:
+      name: Helper - Przycisk 1 licznik kliknięć
+      description: Input number do zliczania kliknięć (potrzebne tylko dla multi-press). Utwórz helper z min=0, max=10, step=1
+      default: ''
+      selector:
+        entity:
+          domain:
+            - input_number
+    helper_button_2_last_press:
+      name: Helper - Przycisk 2 licznik kliknięć
+      description: Input number do zliczania kliknięć (potrzebne tylko dla multi-press). Utwórz helper z min=0, max=10, step=1
+      default: ''
+      selector:
+        entity:
+          domain:
+            - input_number
+    helper_button_3_last_press:
+      name: Helper - Przycisk 3 licznik kliknięć
+      description: Input number do zliczania kliknięć (potrzebne tylko dla multi-press). Utwórz helper z min=0, max=10, step=1
+      default: ''
+      selector:
+        entity:
+          domain:
+            - input_number
+    helper_button_4_last_press:
+      name: Helper - Przycisk 4 licznik kliknięć
+      description: Input number do zliczania kliknięć (potrzebne tylko dla multi-press). Utwórz helper z min=0, max=10, step=1
+      default: ''
+      selector:
+        entity:
+          domain:
+            - input_number
     logbook_enabled:
       name: Włącz logowanie do Logbook
       default: false
@@ -232,6 +293,30 @@ blueprint:
           default: []
           selector:
             action: {}
+        button_1_double:
+          name: Przycisk 1 (Double Press)
+          description: Wymaga włączenia multi-press i helperów
+          default: []
+          selector:
+            action: {}
+        button_1_triple:
+          name: Przycisk 1 (Triple Press)
+          description: Wymaga włączenia multi-press i helperów
+          default: []
+          selector:
+            action: {}
+        button_1_quadruple:
+          name: Przycisk 1 (Quadruple Press)
+          description: Wymaga włączenia multi-press i helperów
+          default: []
+          selector:
+            action: {}
+        button_1_quintuple:
+          name: Przycisk 1 (Quintuple Press)
+          description: Wymaga włączenia multi-press i helperów
+          default: []
+          selector:
+            action: {}
     button_2_custom:
       name: Przycisk 2 - Akcje
       icon: mdi:numeric-2-circle-outline
@@ -254,6 +339,26 @@ blueprint:
             action: {}
         button_2_long_release:
           name: Przycisk 2 (Zwolnienie po długim)
+          default: []
+          selector:
+            action: {}
+        button_2_double:
+          name: Przycisk 2 (Double Press)
+          default: []
+          selector:
+            action: {}
+        button_2_triple:
+          name: Przycisk 2 (Triple Press)
+          default: []
+          selector:
+            action: {}
+        button_2_quadruple:
+          name: Przycisk 2 (Quadruple Press)
+          default: []
+          selector:
+            action: {}
+        button_2_quintuple:
+          name: Przycisk 2 (Quintuple Press)
           default: []
           selector:
             action: {}
@@ -282,6 +387,26 @@ blueprint:
           default: []
           selector:
             action: {}
+        button_3_double:
+          name: Przycisk 3 (Double Press)
+          default: []
+          selector:
+            action: {}
+        button_3_triple:
+          name: Przycisk 3 (Triple Press)
+          default: []
+          selector:
+            action: {}
+        button_3_quadruple:
+          name: Przycisk 3 (Quadruple Press)
+          default: []
+          selector:
+            action: {}
+        button_3_quintuple:
+          name: Przycisk 3 (Quintuple Press)
+          default: []
+          selector:
+            action: {}
     button_4_custom:
       name: Przycisk 4 - Akcje
       icon: mdi:numeric-4-circle-outline
@@ -307,6 +432,26 @@ blueprint:
           default: []
           selector:
             action: {}
+        button_4_double:
+          name: Przycisk 4 (Double Press)
+          default: []
+          selector:
+            action: {}
+        button_4_triple:
+          name: Przycisk 4 (Triple Press)
+          default: []
+          selector:
+            action: {}
+        button_4_quadruple:
+          name: Przycisk 4 (Quadruple Press)
+          default: []
+          selector:
+            action: {}
+        button_4_quintuple:
+          name: Przycisk 4 (Quintuple Press)
+          default: []
+          selector:
+            action: {}
 
 mode: restart
 max_exceeded: silent
@@ -319,25 +464,29 @@ action:
   - variables:
       device_friendly_name: !input device_friendly_name
       payload: "{{ trigger.payload_json }}"
+      # Zigbee2mqtt daje wszystko w jednym polu 'action'!
       action: "{{ payload.action | default('') }}"
-      action_direction: "{{ payload.action_direction | default('') }}"
-      action_type: "{{ payload.action_type | default('') }}"
-      step_size: "{{ payload.action_step_size | default(0) | int }}"
       logbook_enabled: !input logbook_enabled
+      multi_press_enabled: !input multi_press_enabled
+      multi_press_delay: !input multi_press_delay
+      helper_button_1_counter: !input helper_button_1_last_press
+      helper_button_2_counter: !input helper_button_2_last_press
+      helper_button_3_counter: !input helper_button_3_last_press
+      helper_button_4_counter: !input helper_button_4_last_press
       helper_last_button_pressed: !input helper_last_button_pressed
       last_button_pressed: >
         {%- set helper_state = states(helper_last_button_pressed) -%}
         {{ helper_state | int if is_number(helper_state) else 1 }}
-      # Mapowanie akcji z zigbee2mqtt na nazwy w blueprincie
-      # zigbee2mqtt: button_1_press -> blueprint: button_1_short
-      # zigbee2mqtt: button_1_press_release -> blueprint: button_1_short_release
-      # zigbee2mqtt: button_1_hold -> blueprint: button_1_long
-      # zigbee2mqtt: button_1_hold_release -> blueprint: button_1_long_release
+      # Mapuj z nazw zigbee2mqtt na nazwy w blueprincie
+      # button_1_press → button_1_short
+      # button_1_press_release → button_1_short_release
+      # button_1_hold → button_1_long
+      # button_1_hold_release → button_1_long_release
       mapped_action: >
         {% set a = action %}
         {% if '_press_release' in a %}
           {{ a.replace('_press_release', '_short_release') }}
-        {% elif a.endswith('_press') %}
+        {% elif a.endswith('_press') and not 'double' in a and not 'triple' in a %}
           {{ a.replace('_press', '_short') }}
         {% elif '_hold_release' in a %}
           {{ a.replace('_hold_release', '_long_release') }}
@@ -353,21 +502,58 @@ action:
           - service: logbook.log
             data:
               name: Hue Tap Dial (zigbee2mqtt)
-              message: "Device: {{ device_friendly_name }}, Action: {{ action }}, Mapped: {{ mapped_action }}, Direction: {{ action_direction }}, Step: {{ step_size }}"
+              message: "Device: {{ device_friendly_name }}, Action: {{ action }}, Mapped: {{ mapped_action }}"
 
   - choose:
-      # Button 1 actions
+      # Button 1 actions - with multi-press support
       - conditions: "{{ mapped_action == 'button_1_short' }}"
         sequence:
-          - sequence: !input button_1_short
-          - &save_b_1
-            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
-            then:
-              action: input_number.set_value
-              target:
-                entity_id: "{{ helper_last_button_pressed }}"
-              data:
-                value: 1
+          - choose:
+              # Multi-press enabled path
+              - conditions: "{{ multi_press_enabled and helper_button_1_counter != '' }}"
+                sequence:
+                  # Zwiększ licznik
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_1_counter }}"
+                    data:
+                      value: "{{ states(helper_button_1_counter) | int(0) + 1 }}"
+                  # Czekaj na kolejne kliknięcia
+                  - delay:
+                      milliseconds: "{{ multi_press_delay }}"
+                  # Sprawdź końcową liczbę kliknięć i wywołaj odpowiednią akcję
+                  - variables:
+                      click_count: "{{ states(helper_button_1_counter) | int(0) }}"
+                  - choose:
+                      - conditions: "{{ click_count == 1 }}"
+                        sequence: !input button_1_short
+                      - conditions: "{{ click_count == 2 }}"
+                        sequence: !input button_1_double
+                      - conditions: "{{ click_count == 3 }}"
+                        sequence: !input button_1_triple
+                      - conditions: "{{ click_count == 4 }}"
+                        sequence: !input button_1_quadruple
+                      - conditions: "{{ click_count >= 5 }}"
+                        sequence: !input button_1_quintuple
+                  # Zresetuj licznik
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_1_counter }}"
+                    data:
+                      value: 0
+                  # Zapisz ostatni przycisk
+                  - &save_b_1
+                    if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+                    then:
+                      action: input_number.set_value
+                      target:
+                        entity_id: "{{ helper_last_button_pressed }}"
+                      data:
+                        value: 1
+            # Multi-press disabled - normal behavior
+            default:
+              - sequence: !input button_1_short
+              - *save_b_1
       - conditions: "{{ mapped_action == 'button_1_short_release' }}"
         sequence:
           - sequence: !input button_1_short_release
@@ -379,18 +565,48 @@ action:
           - sequence: !input button_1_long_release
           - *save_b_1
 
-      # Button 2 actions
+      # Button 2 actions - with multi-press support
       - conditions: "{{ mapped_action == 'button_2_short' }}"
         sequence:
-          - sequence: !input button_2_short
-          - &save_b_2
-            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
-            then:
-              action: input_number.set_value
-              target:
-                entity_id: "{{ helper_last_button_pressed }}"
-              data:
-                value: 2
+          - choose:
+              - conditions: "{{ multi_press_enabled and helper_button_2_counter != '' }}"
+                sequence:
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_2_counter }}"
+                    data:
+                      value: "{{ states(helper_button_2_counter) | int(0) + 1 }}"
+                  - delay:
+                      milliseconds: "{{ multi_press_delay }}"
+                  - variables:
+                      click_count: "{{ states(helper_button_2_counter) | int(0) }}"
+                  - choose:
+                      - conditions: "{{ click_count == 1 }}"
+                        sequence: !input button_2_short
+                      - conditions: "{{ click_count == 2 }}"
+                        sequence: !input button_2_double
+                      - conditions: "{{ click_count == 3 }}"
+                        sequence: !input button_2_triple
+                      - conditions: "{{ click_count == 4 }}"
+                        sequence: !input button_2_quadruple
+                      - conditions: "{{ click_count >= 5 }}"
+                        sequence: !input button_2_quintuple
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_2_counter }}"
+                    data:
+                      value: 0
+                  - &save_b_2
+                    if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+                    then:
+                      action: input_number.set_value
+                      target:
+                        entity_id: "{{ helper_last_button_pressed }}"
+                      data:
+                        value: 2
+            default:
+              - sequence: !input button_2_short
+              - *save_b_2
       - conditions: "{{ mapped_action == 'button_2_short_release' }}"
         sequence:
           - sequence: !input button_2_short_release
@@ -402,18 +618,48 @@ action:
           - sequence: !input button_2_long_release
           - *save_b_2
 
-      # Button 3 actions
+      # Button 3 actions - with multi-press support
       - conditions: "{{ mapped_action == 'button_3_short' }}"
         sequence:
-          - sequence: !input button_3_short
-          - &save_b_3
-            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
-            then:
-              action: input_number.set_value
-              target:
-                entity_id: "{{ helper_last_button_pressed }}"
-              data:
-                value: 3
+          - choose:
+              - conditions: "{{ multi_press_enabled and helper_button_3_counter != '' }}"
+                sequence:
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_3_counter }}"
+                    data:
+                      value: "{{ states(helper_button_3_counter) | int(0) + 1 }}"
+                  - delay:
+                      milliseconds: "{{ multi_press_delay }}"
+                  - variables:
+                      click_count: "{{ states(helper_button_3_counter) | int(0) }}"
+                  - choose:
+                      - conditions: "{{ click_count == 1 }}"
+                        sequence: !input button_3_short
+                      - conditions: "{{ click_count == 2 }}"
+                        sequence: !input button_3_double
+                      - conditions: "{{ click_count == 3 }}"
+                        sequence: !input button_3_triple
+                      - conditions: "{{ click_count == 4 }}"
+                        sequence: !input button_3_quadruple
+                      - conditions: "{{ click_count >= 5 }}"
+                        sequence: !input button_3_quintuple
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_3_counter }}"
+                    data:
+                      value: 0
+                  - &save_b_3
+                    if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+                    then:
+                      action: input_number.set_value
+                      target:
+                        entity_id: "{{ helper_last_button_pressed }}"
+                      data:
+                        value: 3
+            default:
+              - sequence: !input button_3_short
+              - *save_b_3
       - conditions: "{{ mapped_action == 'button_3_short_release' }}"
         sequence:
           - sequence: !input button_3_short_release
@@ -425,18 +671,48 @@ action:
           - sequence: !input button_3_long_release
           - *save_b_3
 
-      # Button 4 actions
+      # Button 4 actions - with multi-press support
       - conditions: "{{ mapped_action == 'button_4_short' }}"
         sequence:
-          - sequence: !input button_4_short
-          - &save_b_4
-            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
-            then:
-              action: input_number.set_value
-              target:
-                entity_id: "{{ helper_last_button_pressed }}"
-              data:
-                value: 4
+          - choose:
+              - conditions: "{{ multi_press_enabled and helper_button_4_counter != '' }}"
+                sequence:
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_4_counter }}"
+                    data:
+                      value: "{{ states(helper_button_4_counter) | int(0) + 1 }}"
+                  - delay:
+                      milliseconds: "{{ multi_press_delay }}"
+                  - variables:
+                      click_count: "{{ states(helper_button_4_counter) | int(0) }}"
+                  - choose:
+                      - conditions: "{{ click_count == 1 }}"
+                        sequence: !input button_4_short
+                      - conditions: "{{ click_count == 2 }}"
+                        sequence: !input button_4_double
+                      - conditions: "{{ click_count == 3 }}"
+                        sequence: !input button_4_triple
+                      - conditions: "{{ click_count == 4 }}"
+                        sequence: !input button_4_quadruple
+                      - conditions: "{{ click_count >= 5 }}"
+                        sequence: !input button_4_quintuple
+                  - service: input_number.set_value
+                    target:
+                      entity_id: "{{ helper_button_4_counter }}"
+                    data:
+                      value: 0
+                  - &save_b_4
+                    if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+                    then:
+                      action: input_number.set_value
+                      target:
+                        entity_id: "{{ helper_last_button_pressed }}"
+                      data:
+                        value: 4
+            default:
+              - sequence: !input button_4_short
+              - *save_b_4
       - conditions: "{{ mapped_action == 'button_4_short_release' }}"
         sequence:
           - sequence: !input button_4_short_release
