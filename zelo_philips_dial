@@ -8,10 +8,17 @@ blueprint:
     - Single press, Double press, Hold dla każdego przycisku
     - Obrót pokrętła w 3 prędkościach (step/slow/fast)
     - Pokrętło działa inaczej dla każdego przycisku
+    - **NOWE:** Konfigurowalny czas na double click (0.3-3s)
+    - **NOWE:** Opcjonalne logowanie do Logbook
     
     **Wymagane helpery:**
     - Counter (do wykrywania double press)
     - Input Text (do zapamiętania ostatniego przycisku)
+    
+    **Jak działa double click:**
+    Counter liczy kliknięcia w czasie X sekund (domyślnie 1s).
+    Jeśli counter > 1 przy zwolnieniu = double press!
+    Zobacz JAK-DZIALA-DOUBLE-CLICK.md po szczegóły.
   input:
     mqtt_topic:
       name: MQTT Topic
@@ -34,6 +41,23 @@ blueprint:
           domain:
             - input_text
           multiple: false
+    double_click_delay:
+      name: Czas na double click (sekundy)
+      description: Maksymalny czas między kliknięciami aby wykryć double press
+      default: 1
+      selector:
+        number:
+          min: 0.3
+          max: 3.0
+          step: 0.1
+          unit_of_measurement: s
+          mode: slider
+    logbook_enabled:
+      name: Włącz logowanie do Logbook
+      description: Loguje wszystkie akcje do Logbook - przydatne do debugowania
+      default: false
+      selector:
+        boolean: {}
     
     # Button 1
     button_1_single_press:
@@ -239,7 +263,18 @@ action:
   - variables:
       input_text_var: !input last_pressed
       counter_var: !input tap_counter
+      double_click_delay: !input double_click_delay
+      logbook_enabled: !input logbook_enabled
       action: "{{ trigger.payload_json.action }}"
+  
+  # Logowanie do logbook
+  - choose:
+      - conditions: "{{ logbook_enabled }}"
+        sequence:
+          - service: logbook.log
+            data:
+              name: "Hue Tap Dial"
+              message: "Action: {{ action }}, Last button: {{ states(input_text_var) }}, Counter: {{ states(counter_var) }}"
   
   # Wykrywanie button_press - inkrementuj licznik
   - choose:
@@ -265,9 +300,9 @@ action:
           - service: counter.increment
             target:
               entity_id: "{{ counter_var }}"
-          # Czekaj 1s na kolejne kliknięcia
+          # Czekaj na kolejne kliknięcia (configurable delay)
           - delay:
-              seconds: 1
+              seconds: "{{ double_click_delay }}"
           # Zresetuj licznik
           - service: counter.reset
             target:
