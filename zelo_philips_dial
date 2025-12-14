@@ -458,14 +458,13 @@ max_exceeded: silent
 
 trigger:
   - platform: mqtt
-    topic: "zigbee2mqtt/{{ device_friendly_name }}"
+    topic: "zigbee2mqtt/{{ device_friendly_name }}/action"
 
 action:
   - variables:
       device_friendly_name: !input device_friendly_name
-      payload: "{{ trigger.payload_json }}"
-      # Zigbee2mqtt daje wszystko w jednym polu 'action'!
-      action: "{{ payload.action | default('') }}"
+      # Topic /action zwraca czysty string typu "button_1_press", NIE JSON!
+      action: "{{ trigger.payload }}"
       logbook_enabled: !input logbook_enabled
       multi_press_enabled: !input multi_press_enabled
       multi_press_delay: !input multi_press_delay
