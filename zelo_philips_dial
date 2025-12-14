@@ -77,13 +77,13 @@ blueprint:
     2.00 (Dec-14-2025): Ported to zigbee2mqtt
 
   input:
-    remote_entity:
-      name: Philips Hue Tap Dial - Sensor Action
-      description: "Wybierz sensor 'action' swojego Hue Tap Dial z zigbee2mqtt (zwykle nazywa się 'sensor.nazwa_urządzenia_action')"
+    action_sensor:
+      name: Sensor Action Type
+      description: "Wybierz sensor 'Action type' swojego Hue Tap Dial (np. sensor.adrian_przelacznik_glowny_hue_action_type)"
       selector:
         entity:
-          integration: mqtt
           domain: sensor
+          multiple: false
     logbook_enabled:
       name: Enable logging to Logbook
       default: false
@@ -513,14 +513,40 @@ mode: restart
 max_exceeded: silent
 trigger:
   - platform: state
-    entity_id: !input remote_entity
+    entity_id: !input action_sensor
 action:
   - variables:
-      remote_entity: !input remote_entity
-      action: "{{ states(remote_entity) }}"
-      step_size: "{{ state_attr(remote_entity, 'action_step_size') | default(0) }}"
-      rotation_angle: "{{ state_attr(remote_entity, 'action_rotation_angle_step_counter') | default(0) }}"
-      step_mode: "{{ 'Up' if rotation_angle > 0 else 'Down' if rotation_angle < 0 else 'None' }}"
+      action_sensor: !input action_sensor
+      # Wyciągnij prefix z nazwy sensora (np. z "sensor.abc_action_type" zrób "sensor.abc_action")
+      sensor_prefix: "{{ action_sensor.replace('_type', '') }}"
+      action_direction_entity: "{{ sensor_prefix }}_direction"
+      action_step_size_entity: "{{ sensor_prefix }}_step_size"
+      action_time_entity: "{{ sensor_prefix }}_time"
+      # Pobierz wartości z sensorów
+      action_value: "{{ states(action_sensor) }}"
+      action_direction: "{{ states(action_direction_entity) }}"
+      step_size: "{{ states(action_step_size_entity) | int(0) }}"
+      # Mapowanie akcji - na podstawie action_value który może być: press, release, hold, double_press, triple_press, etc.
+      action: >
+        {% set val = action_value %}
+        {% if 'button_1' in val or val in ['press', 'release', 'hold', 'double_press', 'triple_press', 'quadruple_press', 'quintuple_press'] %}
+          {% if val == 'press' %}button_1_press
+          {% elif val == 'release' %}button_1_release  
+          {% elif val == 'hold' %}button_1_hold
+          {% elif val == 'double_press' %}button_1_double_press
+          {% elif val == 'triple_press' %}button_1_triple_press
+          {% elif val == 'quadruple_press' %}button_1_quadruple_press
+          {% elif val == 'quintuple_press' %}button_1_quintuple_press
+          {% else %}{{ val }}
+          {% endif %}
+        {% elif val == 'step' %}
+          {% if action_direction == 'right' %}dial_rotate_right_step
+          {% elif action_direction == 'left' %}dial_rotate_left_step
+          {% else %}unknown
+          {% endif %}
+        {% else %}{{ val }}
+        {% endif %}
+      step_mode: "{{ 'Up' if action_direction == 'right' else 'Down' if action_direction == 'left' else 'None' }}"
       logbook_enabled: !input logbook_enabled
       small_rotation_max: !input small_rotation_max
       medium_rotation_max: !input medium_rotation_max
@@ -534,7 +560,7 @@ action:
           - service: logbook.log
             data:
               name: Hue Tap Dial (zigbee2mqtt)
-              message: "Device: {{ remote_entity }}, Action: {{ action }}, Step Size: {{ step_size }}, Rotation: {{ rotation_angle }}"
+              message: "Sensor: {{ action_sensor }}, Action: {{ action }}, Value: {{ action_value }}, Direction: {{ action_direction }}, Step Size: {{ step_size }}"
   - choose:
       - conditions: "{{ action == 'button_1_press' }}"
         sequence:
