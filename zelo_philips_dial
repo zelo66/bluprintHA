@@ -1,5 +1,5 @@
 blueprint:
-  name: Philips Hue Tap Dial - Smart Dimmer Mode (Z2M)
+  name: "Philips Hue Tap Dial - Smart Dimmer Mode (Z2M)"
   domain: automation
   description: >
     Zaawansowana obsługa Hue Tap Dial.
@@ -18,31 +18,31 @@ blueprint:
   
   input:
     mqtt_topic:
-      name: Zigbee2MQTT Topic
+      name: "Zigbee2MQTT Topic"
       selector:
         text:
     
     # Helpery
     dial_timer_helper:
-      name: Helper: Timer (Minutnik)
-      description: Wymagany do odliczania czasu aktywności pokrętła (np. 5s).
+      name: "Helper: Timer (Minutnik)"
+      description: "Wymagany do odliczania czasu aktywności pokrętła (np. 5s)."
       selector:
         entity:
           domain: timer
     tap_counter:
-      name: Helper: Counter (Licznik)
+      name: "Helper: Counter (Licznik)"
       selector:
         entity:
           domain: counter
     last_pressed:
-      name: Helper: Input Text
+      name: "Helper: Input Text"
       selector:
         entity:
           domain: input_text
 
     # Konfiguracja czasów
     dial_active_time:
-      name: Czas aktywności pokrętła (s)
+      name: "Czas aktywności pokrętła (s)"
       default: 5
       selector:
         number:
@@ -51,7 +51,7 @@ blueprint:
           unit_of_measurement: s
           mode: slider
     double_click_delay:
-      name: Czas na double click (s)
+      name: "Czas na double click (s)"
       default: 1
       selector:
         number:
@@ -63,60 +63,60 @@ blueprint:
 
     # === BUTTON 1 CONFIG ===
     btn_1_light:
-      name: (B1) Sterowanie jasnością (Opcjonalne)
-      description: Wybierz światło, które ma być ściemniane po wciśnięciu przycisku 1.
+      name: "(B1) Sterowanie jasnością (Opcjonalne)"
+      description: "Wybierz światło, które ma być ściemniane po wciśnięciu przycisku 1."
       default: []
       selector:
         entity:
           domain: light
           multiple: true
     btn_1_action:
-      name: (B1) Akcja po kliknięciu
+      name: "(B1) Akcja po kliknięciu"
       default: []
       selector:
         action: {}
 
     # === BUTTON 2 CONFIG ===
     btn_2_light:
-      name: (B2) Sterowanie jasnością (Opcjonalne)
-      description: Wybierz światło dla przycisku 2.
+      name: "(B2) Sterowanie jasnością (Opcjonalne)"
+      description: "Wybierz światło dla przycisku 2."
       default: []
       selector:
         entity:
           domain: light
           multiple: true
     btn_2_action:
-      name: (B2) Akcja po kliknięciu
+      name: "(B2) Akcja po kliknięciu"
       default: []
       selector:
         action: {}
 
     # === BUTTON 3 CONFIG ===
     btn_3_light:
-      name: (B3) Sterowanie jasnością (Opcjonalne)
-      description: Wybierz światło dla przycisku 3.
+      name: "(B3) Sterowanie jasnością (Opcjonalne)"
+      description: "Wybierz światło dla przycisku 3."
       default: []
       selector:
         entity:
           domain: light
           multiple: true
     btn_3_action:
-      name: (B3) Akcja po kliknięciu
+      name: "(B3) Akcja po kliknięciu"
       default: []
       selector:
         action: {}
 
     # === BUTTON 4 CONFIG ===
     btn_4_light:
-      name: (B4) Sterowanie jasnością (Opcjonalne)
-      description: Wybierz światło dla przycisku 4.
+      name: "(B4) Sterowanie jasnością (Opcjonalne)"
+      description: "Wybierz światło dla przycisku 4."
       default: []
       selector:
         entity:
           domain: light
           multiple: true
     btn_4_action:
-      name: (B4) Akcja po kliknięciu
+      name: "(B4) Akcja po kliknięciu"
       default: []
       selector:
         action: {}
@@ -205,7 +205,7 @@ action:
           # Wykonaj ściemnianie TYLKO jeśli wybrano światło dla tego przycisku
           - if:
               - condition: template
-                value_template: "{{ target_light != [] and target_light != None }}"
+                value_template: "{{ target_light != [] and target_light != None and target_light != '[]' }}"
             then:
               - service: light.turn_on
                 target:
