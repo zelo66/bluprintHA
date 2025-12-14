@@ -1,0 +1,781 @@
+blueprint:
+  name: Philips Hue Tap Dial - Custom Controls (zigbee2mqtt)
+  domain: automation
+  homeassistant:
+    min_version: 2024.10.0
+  source_url: https://gist.github.com/zeeMonkeez/3e9f9cd68f9368d09973d5e5d437a4dd
+  description: >
+    # Philips Hue Tap Dial - Custom Controls (zigbee2mqtt version)
+
+    This blueprint enables comprehensive configuration of a Philips Hue Tap Dial connected via zigbee2mqtt.
+
+    If you plan to use your Hue Tap Dial as a media controller, there is [another
+    blueprint available which simplifies volume and transport control](https://community.home-assistant.io/t/zha-philips-hue-tap-switch-mini-media-controls-rdm002/789650). You may want
+    to use that in preference to this one.
+
+    ## Key Features
+
+    * Velocity-sensitive rotational Controls
+    * Actions for Single, Double, Triple, Quadruple, and Quintuple press events for each button
+    * Dial actions depending on the last button that was pressed
+
+    ## Velocity-Sensitive Rotational Controls
+
+    This blueprint allows actions to be invoked when the controller's
+    dial is rotated either clockwise or counterclockwise. The user can specify the
+    following actions:
+
+    * Small Clockwise Rotation
+    * Small Counterclockwise Rotation
+    * Medium Clockwise Rotation
+    * Medium Counterclockwise Rotation
+    * Large Clockwise Rotation
+    * Large Counterclockwise Rotation
+
+    As the dial is rotated, it generates "step" events with numbers indicating how
+    far the dial turned. These numbers do not correspond directly to the detents on
+    the dial, but they are consistent and they indicate the speed of rotation.
+
+    Within this template, you specify the "windows" for small, medium, and large events.
+
+    You additionally specify the actions to take for each type of event for both
+    clockwise and counterclockwise rotations. If you are, for example, using the
+    dial to control a light dimmer or a volume output, you will create actions
+    that make small, medium, and large changes to the light, volume, or whatever
+    as appropriate.
+
+    The default window sizes will work for most scenarios.
+
+    With this blueprint, the dial can remember which button was last pressed and issue
+    different dial actions accordingly. To use this feature, you have to create a
+    helper `input_number` and specify it in the Extended Rotation Controls section. If
+    the helper is not defined or does not yield a valid value, the default Button 1
+    action is used, independent of which button was last pressed.
+
+    It is up to the user of this template to
+    implement the actions.
+
+    ## Button Actions
+
+    Button actions will be self-explanatory.
+
+    Simply create the actions you want to execute for the appropriate press, release,
+    or multi-press event.
+
+    ## Logbook Logging
+
+    When Logbook Logging is enabled, a logbook event will be generated each time an event
+    is received. In the case of a rotation event, a second event will be generated which
+    describes which rotation window the event maps to.
+
+    ## Version History:
+
+    1.00 (Nov-02-2024): Initial Release (ZHA)
+    1.01 (Nov-22-2024): Fixed multi-press events
+    1.02 (Jan-16-2025): Ignore spurious rotation events. Fix log errors caused by reading non-existent params
+    1.03 (Dec-11-2025): Add button-dependent dial actions
+    2.00 (Dec-14-2025): Ported to zigbee2mqtt
+
+  input:
+    remote_name:
+      name: Nazwa urządzenia w zigbee2mqtt (Friendly Name)
+      description: "Podaj friendly name urządzenia z zigbee2mqtt (np. 'hue_tap_dial_salon'). Możesz znaleźć to w interfejsie zigbee2mqtt."
+      selector:
+        text:
+    logbook_enabled:
+      name: Enable logging to Logbook
+      default: false
+      selector:
+        boolean: {}
+    rotation_controls:
+      name: Rotation Controls
+      description: "Defines the actions to be triggered when the Dial is rotated. 
+        If the Extended Rotation Controls are used, the actions in this section 
+        are triggered when Button 1 was the last button triggered. Otherwise, 
+        the actions in this section are triggered irrespective of the last button 
+        pressed."
+      icon: mdi:rotate-360
+      collapsed: true
+      input:
+        small_rotation_max:
+          name: Small Rotation Maximum
+          description: "The maximum \"Step Size\" of a \"Small Rotation\".\nA rotation 
+            event with a step size between 1 and this value (inclusively) \nwill cause 
+            either the clockwise or counterclockwise \"small\" rotation action\nto 
+            run\n"
+          default: 13
+          selector:
+            number:
+              min: 1.0
+              max: 100.0
+              step: 1.0
+              mode: box
+        medium_rotation_max:
+          name: Medium Rotation Maximum
+          description: "The maximum \"Step Size\" of a \"Medium Rotation\".\nA rotation 
+            event with a \"Step Size\" greater than the \"Small Rotation Maximum\",\nand 
+            less than or equal to this value (inclusively) will cause either the\nclockwise 
+            or counterclockwise \"medium\" rotation action to run\n\n** A rotation 
+            event with a \"Step Size\" greater than this value will be treated \nas 
+            a \"Large Rotation\" **\n"
+          default: 24
+          selector:
+            number:
+              min: 1.0
+              max: 100.0
+              step: 1.0
+              mode: box
+        clockwise_rotation_small:
+          name: Clockwise Rotation - Small
+          description: Action to run when a small clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_medium:
+          name: Clockwise Rotation - Medium
+          description: Action to run when a medium clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_large:
+          name: Clockwise Rotation - Large
+          description: Action to run when a large clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_small:
+          name: Counterclockwise Rotation - Small
+          description: Action to run when a small counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_medium:
+          name: Counterclockwise Rotation - Medium
+          description: Action to run when a medium counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_large:
+          name: Counterclockwise Rotation - Large
+          description: Action to run when a large counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+    rotation_controls_extended:
+      name: Extended rotation control settings
+      description: >
+        The dial can remember the last pressed button and apply different actions on 
+        rotation.
+      icon: mdi:rotate-orbit
+      collapsed: true
+      input:
+        helper_last_button_pressed:
+          name: Helper - Last Button Pressed
+          description: >
+            Input Number used to store the last button pressed on the controller. 
+            You will need to manually [create a number helper](/config/helpers) 
+            entity for this.
+          default: ''
+          selector:
+            entity:
+              domain:
+                - input_number
+              reorder: false
+              multiple: false
+        clockwise_rotation_small_2:
+          name: Clockwise Rotation 2 - Small – Button 2
+          description: Action to run when a small clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_medium_2:
+          name: Clockwise Rotation - Medium – Button 2
+          description: Action to run when a medium clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_large_2:
+          name: Clockwise Rotation - Large – Button 2
+          description: Action to run when a large clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_small_2:
+          name: Counterclockwise Rotation - Small – Button 2
+          description: Action to run when a small counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_medium_2:
+          name: Counterclockwise Rotation - Medium – Button 2
+          description: Action to run when a medium counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_large_2:
+          name: Counterclockwise Rotation - Large – Button 2
+          description: Action to run when a large counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_small_3:
+          name: Clockwise Rotation - Small – Button 3
+          description: Action to run when a small clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_medium_3:
+          name: Clockwise Rotation - Medium – Button 3
+          description: Action to run when a medium clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_large_3:
+          name: Clockwise Rotation - Large – Button 3
+          description: Action to run when a large clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_small_3:
+          name: Counterclockwise Rotation - Small – Button 3
+          description: Action to run when a small counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_medium_3:
+          name: Counterclockwise Rotation - Medium – Button 3
+          description: Action to run when a medium counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_large_3:
+          name: Counterclockwise Rotation - Large – Button 3
+          description: Action to run when a large counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_small_4:
+          name: Clockwise Rotation - Small – Button 4
+          description: Action to run when a small clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_medium_4:
+          name: Clockwise Rotation - Medium – Button 4
+          description: Action to run when a medium clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        clockwise_rotation_large_4:
+          name: Clockwise Rotation - Large – Button 4
+          description: Action to run when a large clockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_small_4:
+          name: Counterclockwise Rotation - Small – Button 4
+          description: Action to run when a small counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_medium_4:
+          name: Counterclockwise Rotation - Medium – Button 4
+          description: Action to run when a medium counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+        counter_clockwise_rotation_large_4:
+          name: Counterclockwise Rotation - Large – Button 4
+          description: Action to run when a large counterclockwise rotation occurs
+          default: []
+          selector:
+            action: {}
+
+    button_1_custom:
+      name: Button 1 - Custom Actions
+      icon: mdi:numeric-1-circle-outline
+      collapsed: true
+      input:
+        button_1_short:
+          name: Button 1 (Short Press)
+          description: Action to run on a short press of Button 1
+          default: []
+          selector:
+            action: {}
+        button_1_short_release:
+          name: Button 1 (Short Release)
+          description: Action to run on a release of Button 1 after a short press
+          default: []
+          selector:
+            action: {}
+        button_1_long:
+          name: Button 1 (Long Press)
+          description: Action to run on a long press of Button 1. Will repeat while 
+            the button is held
+          default: []
+          selector:
+            action: {}
+        button_1_long_release:
+          name: Button 1 (Long Release)
+          description: Action to run when Button 1 is released after a long press
+          default: []
+          selector:
+            action: {}
+        button_1_double:
+          name: Button 1 (Double Press)
+          description: Action to run on a double press of Button 1
+          default: []
+          selector:
+            action: {}
+        button_1_triple:
+          name: Button 1 (Triple Press)
+          description: Action to run on a triple press of Button 1
+          default: []
+          selector:
+            action: {}
+        button_1_quadruple:
+          name: Button 1 (Quadruple Press)
+          description: Action to run on a quadruple press of Button 1
+          default: []
+          selector:
+            action: {}
+        button_1_quintuple:
+          name: Button 1 (Quintuple Press)
+          description: Action to run on a quintuple press of Button 1
+          default: []
+          selector:
+            action: {}
+    button_2_custom:
+      name: Button 2 - Custom Actions
+      icon: mdi:numeric-2-circle-outline
+      collapsed: true
+      input:
+        button_2_short:
+          name: Button 2 (Short Press)
+          description: Action to run on a short press of Button 2
+          default: []
+          selector:
+            action: {}
+        button_2_short_release:
+          name: Button 2 (Short Release)
+          description: Action to run on a release of Button 2 after a short press
+          default: []
+          selector:
+            action: {}
+        button_2_long:
+          name: Button 2 (Long Press)
+          description: Action to run on a long press of Button 2. Will repeat while 
+            the button is held
+          default: []
+          selector:
+            action: {}
+        button_2_long_release:
+          name: Button 2 (Long Release)
+          description: Action to run when Button 2 is released after a long press
+          default: []
+          selector:
+            action: {}
+        button_2_double:
+          name: Button 2 (Double Press)
+          description: Action to run on a double press of Button 2
+          default: []
+          selector:
+            action: {}
+        button_2_triple:
+          name: Button 2 (Triple Press)
+          description: Action to run on a triple press of Button 2
+          default: []
+          selector:
+            action: {}
+        button_2_quadruple:
+          name: Button 2 (Quadruple Press)
+          description: Action to run on a quadruple press of Button 2
+          default: []
+          selector:
+            action: {}
+        button_2_quintuple:
+          name: Button 2 (Quintuple Press)
+          description: Action to run on a quintuple press of Button 2
+          default: []
+          selector:
+            action: {}
+    button_3_custom:
+      name: Button 3 - Custom Actions
+      icon: mdi:numeric-3-circle-outline
+      collapsed: true
+      input:
+        button_3_short:
+          name: Button 3 (Short Press)
+          description: Action to run on a short press of Button 3
+          default: []
+          selector:
+            action: {}
+        button_3_short_release:
+          name: Button 3 (Short Release)
+          description: Action to run on a release of Button 3 after a short press
+          default: []
+          selector:
+            action: {}
+        button_3_long:
+          name: Button 3 (Long Press)
+          description: Action to run on a long press of Button 3. Will repeat while 
+            the button is held
+          default: []
+          selector:
+            action: {}
+        button_3_long_release:
+          name: Button 3 (Long Release)
+          description: Action to run when Button 3 is released after a long press
+          default: []
+          selector:
+            action: {}
+        button_3_double:
+          name: Button 3 (Double Press)
+          description: Action to run on a double press of Button 3
+          default: []
+          selector:
+            action: {}
+        button_3_triple:
+          name: Button 3 (Triple Press)
+          description: Action to run on a triple press of Button 3
+          default: []
+          selector:
+            action: {}
+        button_3_quadruple:
+          name: Button 3 (Quadruple Press)
+          description: Action to run on a quadruple press of Button 3
+          default: []
+          selector:
+            action: {}
+        button_3_quintuple:
+          name: Button 3 (Quintuple Press)
+          description: Action to run on a quintuple press of Button 3
+          default: []
+          selector:
+            action: {}
+    button_4_custom:
+      name: Button 4 - Custom Actions
+      icon: mdi:numeric-4-circle-outline
+      collapsed: true
+      input:
+        button_4_short:
+          name: Button 4 (Short Press)
+          description: Action to run on a short press of Button 4
+          default: []
+          selector:
+            action: {}
+        button_4_short_release:
+          name: Button 4 (Short Release)
+          description: Action to run on a release of Button 4 after a short press
+          default: []
+          selector:
+            action: {}
+        button_4_long:
+          name: Button 4 (Long Press)
+          description: Action to run on a long press of Button 4. Will repeat while 
+            the button is held
+          default: []
+          selector:
+            action: {}
+        button_4_long_release:
+          name: Button 4 (Long Release)
+          description: Action to run when Button 4 is released after a long press
+          default: []
+          selector:
+            action: {}
+        button_4_double:
+          name: Button 4 (Double Press)
+          description: Action to run on a double press of Button 4
+          default: []
+          selector:
+            action: {}
+        button_4_triple:
+          name: Button 4 (Triple Press)
+          description: Action to run on a triple press of Button 4
+          default: []
+          selector:
+            action: {}
+        button_4_quadruple:
+          name: Button 4 (Quadruple Press)
+          description: Action to run on a quadruple press of Button 4
+          default: []
+          selector:
+            action: {}
+        button_4_quintuple:
+          name: Button 4 (Quintuple Press)
+          description: Action to run on a quintuple press of Button 4
+          default: []
+          selector:
+            action: {}
+mode: restart
+max_exceeded: silent
+trigger:
+  - platform: mqtt
+    topic: "zigbee2mqtt/{{ remote_name }}"
+action:
+  - variables:
+      payload: "{{ trigger.payload_json }}"
+      action: "{{ payload.action }}"
+      step_size: "{{ payload.action_step_size | default(0) }}"
+      step_mode: "{{ 'Up' if payload.action_rotation_angle_step_counter > 0 else 'Down' if payload.action_rotation_angle_step_counter is defined else 'None' }}"
+      logbook_enabled: !input logbook_enabled
+      small_rotation_max: !input small_rotation_max
+      medium_rotation_max: !input medium_rotation_max
+      remote_name: !input remote_name
+      helper_last_button_pressed: !input helper_last_button_pressed
+      last_button_pressed: >
+        {%- set helper_state = states(helper_last_button_pressed) -%}
+        {{ helper_state | int if is_number(helper_state) else 1 }}
+  - choose:
+      - conditions: "{{ logbook_enabled }}"
+        sequence:
+          - service: logbook.log
+            data:
+              name: Hue Tap Dial (zigbee2mqtt)
+              message: "Device: {{ remote_name }}, Action: {{ action }}, Step Size: {{ step_size }}, Step Mode: {{ step_mode }}"
+  - choose:
+      - conditions: "{{ action == 'button_1_press' }}"
+        sequence:
+          - sequence: !input button_1_short
+          - &save_b_1
+            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+            then:
+              action: input_number.set_value
+              target:
+                entity_id: "{{ helper_last_button_pressed }}"
+              data:
+                value: 1
+      - conditions: "{{ action == 'button_1_release' }}"
+        sequence:
+          - sequence: !input button_1_short_release
+          - *save_b_1
+      - conditions: "{{ action == 'button_1_hold' }}"
+        sequence: !input button_1_long
+      - conditions: "{{ action == 'button_1_long_release' }}"
+        sequence:
+          - sequence: !input button_1_long_release
+          - *save_b_1
+      - conditions: "{{ action == 'button_1_double_press' }}"
+        sequence:
+          - sequence: !input button_1_double
+          - *save_b_1
+      - conditions: "{{ action == 'button_1_triple_press' }}"
+        sequence:
+          - sequence: !input button_1_triple
+          - *save_b_1
+      - conditions: "{{ action == 'button_1_quadruple_press' }}"
+        sequence:
+          - sequence: !input button_1_quadruple
+          - *save_b_1
+      - conditions: "{{ action == 'button_1_quintuple_press' }}"
+        sequence:
+          - sequence: !input button_1_quintuple
+          - *save_b_1
+      - conditions: "{{ action == 'button_2_press' }}"
+        sequence:
+          - sequence: !input button_2_short
+          - &save_b_2
+            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+            then:
+              action: input_number.set_value
+              target:
+                entity_id: "{{ helper_last_button_pressed }}"
+              data:
+                value: 2
+      - conditions: "{{ action == 'button_2_release' }}"
+        sequence:
+          - sequence: !input button_2_short_release
+          - *save_b_2
+      - conditions: "{{ action == 'button_2_hold' }}"
+        sequence: !input button_2_long
+      - conditions: "{{ action == 'button_2_long_release' }}"
+        sequence:
+          - sequence: !input button_2_long_release
+          - *save_b_2
+      - conditions: "{{ action == 'button_2_double_press' }}"
+        sequence:
+          - sequence: !input button_2_double
+          - *save_b_2
+      - conditions: "{{ action == 'button_2_triple_press' }}"
+        sequence:
+          - sequence: !input button_2_triple
+          - *save_b_2
+      - conditions: "{{ action == 'button_2_quadruple_press' }}"
+        sequence:
+          - sequence: !input button_2_quadruple
+          - *save_b_2
+      - conditions: "{{ action == 'button_2_quintuple_press' }}"
+        sequence:
+          - sequence: !input button_2_quintuple
+          - *save_b_2
+      - conditions: "{{ action == 'button_3_press' }}"
+        sequence:
+          - sequence: !input button_3_short
+          - &save_b_3
+            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+            then:
+              action: input_number.set_value
+              target:
+                entity_id: "{{ helper_last_button_pressed }}"
+              data:
+                value: 3
+      - conditions: "{{ action == 'button_3_release' }}"
+        sequence:
+          - sequence: !input button_3_short_release
+          - *save_b_3
+      - conditions: "{{ action == 'button_3_hold' }}"
+        sequence: !input button_3_long
+      - conditions: "{{ action == 'button_3_long_release' }}"
+        sequence:
+          - sequence: !input button_3_long_release
+          - *save_b_3
+      - conditions: "{{ action == 'button_3_double_press' }}"
+        sequence:
+          - sequence: !input button_3_double
+          - *save_b_3
+      - conditions: "{{ action == 'button_3_triple_press' }}"
+        sequence:
+          - sequence: !input button_3_triple
+          - *save_b_3
+      - conditions: "{{ action == 'button_3_quadruple_press' }}"
+        sequence:
+          - sequence: !input button_3_quadruple
+          - *save_b_3
+      - conditions: "{{ action == 'button_3_quintuple_press' }}"
+        sequence:
+          - sequence: !input button_3_quintuple
+          - *save_b_3
+      - conditions: "{{ action == 'button_4_press' }}"
+        sequence:
+          - sequence: !input button_4_short
+          - &save_b_4
+            if: ["{{ states(helper_last_button_pressed) != 'unknown'}}"]
+            then:
+              action: input_number.set_value
+              target:
+                entity_id: "{{ helper_last_button_pressed }}"
+              data:
+                value: 4
+      - conditions: "{{ action == 'button_4_release' }}"
+        sequence:
+          - sequence: !input button_4_short_release
+          - *save_b_4
+      - conditions: "{{ action == 'button_4_hold' }}"
+        sequence: !input button_4_long
+      - conditions: "{{ action == 'button_4_long_release' }}"
+        sequence:
+          - sequence: !input button_4_long_release
+          - *save_b_4
+      - conditions: "{{ action == 'button_4_double_press' }}"
+        sequence:
+          - sequence: !input button_4_double
+          - *save_b_4
+      - conditions: "{{ action == 'button_4_triple_press' }}"
+        sequence:
+          - sequence: !input button_4_triple
+          - *save_b_4
+      - conditions: "{{ action == 'button_4_quadruple_press' }}"
+        sequence:
+          - sequence: !input button_4_quadruple
+          - *save_b_4
+      - conditions: "{{ action == 'button_4_quintuple_press' }}"
+        sequence:
+          - sequence: !input button_4_quintuple
+          - *save_b_4
+      - conditions: "{{ action in ['dial_rotate_left_step', 'dial_rotate_right_step'] }}"
+        sequence:
+          - variables:
+              step_size_name: "{% if step_size <= small_rotation_max %}\n  {{ \"Small\" }}\n{% elif step_size <= medium_rotation_max %}\n  {{ \"Medium\" }}\n{% else %}\n  {{ \"Large\" }}\n{% endif %} \n"
+          - choose:
+              - conditions: "{{ action == 'dial_rotate_right_step' }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ last_button_pressed == 1 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input clockwise_rotation_small
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input clockwise_rotation_medium
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input clockwise_rotation_large
+                      - conditions: "{{ last_button_pressed == 2 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input clockwise_rotation_small_2
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input clockwise_rotation_medium_2
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input clockwise_rotation_large_2
+                      - conditions: "{{ last_button_pressed == 3 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input clockwise_rotation_small_3
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input clockwise_rotation_medium_3
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input clockwise_rotation_large_3
+                      - conditions: "{{ last_button_pressed == 4 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input clockwise_rotation_small_4
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input clockwise_rotation_medium_4
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input clockwise_rotation_large_4
+                  - choose:
+                      - conditions: "{{ logbook_enabled }}"
+                        sequence:
+                          - service: logbook.log
+                            data:
+                              name: Hue Tap Dial
+                              message: "{{ step_size_name}} button {{ last_button_pressed }} clockwise rotation event"
+              - conditions: "{{ action == 'dial_rotate_left_step' }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ last_button_pressed == 1 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input counter_clockwise_rotation_small
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input counter_clockwise_rotation_medium
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input counter_clockwise_rotation_large
+                      - conditions: "{{ last_button_pressed == 2 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input counter_clockwise_rotation_small_2
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input counter_clockwise_rotation_medium_2
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input counter_clockwise_rotation_large_2
+                      - conditions: "{{ last_button_pressed == 3 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input counter_clockwise_rotation_small_3
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input counter_clockwise_rotation_medium_3
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input counter_clockwise_rotation_large_3
+                      - conditions: "{{ last_button_pressed == 4 }}"
+                        sequence:
+                          - choose:
+                              - conditions: "{{ step_size_name == 'Small' }}"
+                                sequence: !input counter_clockwise_rotation_small_4
+                              - conditions: "{{ step_size_name == 'Medium' }}"
+                                sequence: !input counter_clockwise_rotation_medium_4
+                              - conditions: "{{ step_size_name == 'Large' }}"
+                                sequence: !input counter_clockwise_rotation_large_4
+                  - choose:
+                      - conditions: "{{ logbook_enabled }}"
+                        sequence:
+                          - service: logbook.log
+                            data:
+                              name: Hue Tap Dial
+                              message: "{{ step_size_name}} button {{ last_button_pressed }} counterclockwise rotation event"
