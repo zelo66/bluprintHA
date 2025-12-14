@@ -8,6 +8,12 @@ blueprint:
     # Philips Hue Tap Dial - Custom Controls (zigbee2mqtt version)
 
     Blueprint dostosowany do pracy z Philips Hue Tap Dial podłączonym przez zigbee2mqtt.
+    
+    ## Konfiguracja
+    
+    1. Wybierz urządzenie Hue Tap Dial z dropdown
+    2. Wybierz sensor "Action" z tego urządzenia (zwykle kończy się na "_action")
+    3. Skonfiguruj akcje dla przycisków i pokrętła
 
     ## Kluczowe funkcje
 
@@ -16,53 +22,32 @@ blueprint:
     * **Akcje dla pokrętła**: step (pojedynczy krok), slow (wolne obracanie), fast (szybkie obracanie)
     * **Rozszerzone sterowanie**: pokrętło może zapamiętać ostatnio naciśnięty przycisk
 
-    ## Akcje przycisków
-
-    Każdy przycisk obsługuje:
-    * Short Press (krótkie naciśnięcie)
-    * Short Release (zwolnienie po krótkim naciśnięciu)
-    * Long Press/Hold (długie przytrzymanie - może się powtarzać)
-    * Long Release (zwolnienie po długim przytrzymaniu)
-    
-    ### Multi-press (opcjonalnie)
-    Jeśli włączysz multi-press i utworzysz helpery (input_number):
-    * Double Press (2x naciśnięcie)
-    * Triple Press (3x naciśnięcie)
-    * Quadruple Press (4x naciśnięcie)
-    * Quintuple Press (5x naciśnięcie)
-
-    ## Akcje pokrętła
-
-    Pokrętło obsługuje 3 prędkości w każdym kierunku:
-    * Step - pojedynczy krok (jedno kliknięcie)
-    * Slow - wolne ciągłe obracanie
-    * Fast - szybkie ciągłe obracanie
-
-    ## Jak skonfigurować multi-press
-
-    1. Włącz opcję "multi_press_enabled"
-    2. Ustaw czas między naciśnięciami (domyślnie 500ms)
-    3. Dla każdego przycisku który chcesz obsługiwać:
-       - Utwórz helper Input Number (min=0, max=10, step=1)
-       - Wybierz ten helper w odpowiedniej opcji
-
     ## Version History:
 
     2.00 (Dec-14-2025): Wersja dla zigbee2mqtt
     2.01 (Dec-14-2025): Dodano wykrywanie multi-press
+    2.02 (Dec-14-2025): Zmieniono na device selector
 
   input:
-    device_friendly_name:
-      name: Friendly Name urządzenia w zigbee2mqtt
-      description: >
-        Wpisz dokładnie friendly name urządzenia z zigbee2mqtt.
-        
-        Możesz to sprawdzić:
-        - W interfejsie zigbee2mqtt
-        - W nazwach sensorów (np. jeśli sensor to "sensor.adrian_przelacznik_glowny_hue_action_type", 
-          friendly name to "Adrian_Przełącznik_Główny_HUE")
+    remote:
+      name: Philips Hue Tap Dial
+      description: Wybierz swoje urządzenie Hue Tap Dial
       selector:
-        text:
+        device:
+          filter:
+            integration: mqtt
+            manufacturer: Philips
+            model: Hue Tap dial switch
+          multiple: false
+    action_sensor:
+      name: Action Sensor (automatyczne)
+      description: Wybierz sensor "Action" z wybranego urządzenia (powinien być tylko jeden)
+      selector:
+        entity:
+          filter:
+            device: !input remote
+            domain: sensor
+          multiple: false
     multi_press_enabled:
       name: Włącz wykrywanie multi-press (double, triple, etc.)
       description: Wykrywa wielokrotne naciśnięcia przycisku w krótkim czasie
@@ -457,14 +442,17 @@ mode: restart
 max_exceeded: silent
 
 trigger:
-  - platform: mqtt
-    topic: "zigbee2mqtt/{{ device_friendly_name }}/action"
+  - platform: state
+    entity_id: !input action_sensor
+
+condition: []
 
 action:
   - variables:
-      device_friendly_name: !input device_friendly_name
-      # Topic /action zwraca czysty string typu "button_1_press", NIE JSON!
-      action: "{{ trigger.payload }}"
+      remote: !input remote
+      action_sensor: !input action_sensor
+      # Pobierz action z triggera
+      action: "{{ trigger.to_state.state }}"
       logbook_enabled: !input logbook_enabled
       multi_press_enabled: !input multi_press_enabled
       multi_press_delay: !input multi_press_delay
@@ -477,10 +465,6 @@ action:
         {%- set helper_state = states(helper_last_button_pressed) -%}
         {{ helper_state | int if is_number(helper_state) else 1 }}
       # Mapuj z nazw zigbee2mqtt na nazwy w blueprincie
-      # button_1_press → button_1_short
-      # button_1_press_release → button_1_short_release
-      # button_1_hold → button_1_long
-      # button_1_hold_release → button_1_long_release
       mapped_action: >
         {% set a = action %}
         {% if '_press_release' in a %}
@@ -501,7 +485,7 @@ action:
           - service: logbook.log
             data:
               name: Hue Tap Dial (zigbee2mqtt)
-              message: "Device: {{ device_friendly_name }}, Action: {{ action }}, Mapped: {{ mapped_action }}"
+              message: "Device: {{ device_attr(remote, 'name') }}, Sensor: {{ action_sensor }}, Action: {{ action }}, Mapped: {{ mapped_action }}"
 
   - choose:
       # Button 1 actions - with multi-press support
