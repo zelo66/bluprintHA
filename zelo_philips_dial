@@ -1,48 +1,49 @@
 blueprint:
-  name: "Philips Hue Tap Dial - Smart Dimmer Mode (Z2M)"
+  name: "Philips Hue Tap Dial - Smart Dimmer V2 (Z2M)"
   domain: automation
   description: >
-    Zaawansowana obsługa Hue Tap Dial.
+    Wersja poprawiona.
+    Pełna kontrola Philips Hue Tap Dial przez zigbee2mqtt.
     
-    **JAK TO DZIAŁA:**
-    1. Klikasz przycisk (1, 2, 3 lub 4).
-    2. Uruchamia się **Timer** (np. na 5 sekund).
-    3. Jeśli w konfiguracji wybrałeś **Światło do sterowania** dla tego przycisku, pokrętło automatycznie zmienia jego jasność.
-    4. Szybkie kręcenie zmienia jasność mocniej, wolne - precyzyjniej.
-    5. Po upływie czasu (Timer wygasł), pokrętło przestaje sterować światłem (zabezpieczenie).
-    
-    **Wymagania:**
-    - Utworzony Helper typu **Timer** (Minutnik).
-    - Utworzony Helper typu **Counter** (Licznik).
-    - Utworzony Helper typu **Input Text**.
+    Wymagane helpery:
+    1. Timer (Minutnik) - do odliczania czasu aktywności pokrętła.
+    2. Input Text - do pamiętania ostatniego przycisku.
+    3. Counter - do obsługi double-click (opcjonalnie, jeśli używasz).
   
   input:
     mqtt_topic:
       name: "Zigbee2MQTT Topic"
+      description: "Np. zigbee2mqtt/Salon_Hue_Dial"
       selector:
-        text:
-    
-    # Helpery
+        text: {}
+
     dial_timer_helper:
       name: "Helper: Timer (Minutnik)"
-      description: "Wymagany do odliczania czasu aktywności pokrętła (np. 5s)."
+      description: "Niezbędny. Utwórz helper typu Timer."
       selector:
         entity:
           domain: timer
-    tap_counter:
-      name: "Helper: Counter (Licznik)"
-      selector:
-        entity:
-          domain: counter
+          multiple: false
+
     last_pressed:
       name: "Helper: Input Text"
+      description: "Niezbędny. Utwórz helper typu Input Text."
       selector:
         entity:
           domain: input_text
+          multiple: false
 
-    # Konfiguracja czasów
+    tap_counter:
+      name: "Helper: Counter (Licznik)"
+      description: "Używany do wykrywania podwójnych kliknięć."
+      selector:
+        entity:
+          domain: counter
+          multiple: false
+
     dial_active_time:
       name: "Czas aktywności pokrętła (s)"
+      description: "Przez ile sekund pokrętło steruje światłem po kliknięciu."
       default: 5
       selector:
         number:
@@ -50,21 +51,11 @@ blueprint:
           max: 60
           unit_of_measurement: s
           mode: slider
-    double_click_delay:
-      name: "Czas na double click (s)"
-      default: 1
-      selector:
-        number:
-          min: 0.3
-          max: 3.0
-          step: 0.1
-          unit_of_measurement: s
-          mode: slider
-
-    # === BUTTON 1 CONFIG ===
+          
+    # === BUTTON 1 ===
     btn_1_light:
-      name: "(B1) Sterowanie jasnością (Opcjonalne)"
-      description: "Wybierz światło, które ma być ściemniane po wciśnięciu przycisku 1."
+      name: "(B1) Sterowanie jasnością"
+      description: "Wybierz światło dla przycisku 1."
       default: []
       selector:
         entity:
@@ -76,9 +67,9 @@ blueprint:
       selector:
         action: {}
 
-    # === BUTTON 2 CONFIG ===
+    # === BUTTON 2 ===
     btn_2_light:
-      name: "(B2) Sterowanie jasnością (Opcjonalne)"
+      name: "(B2) Sterowanie jasnością"
       description: "Wybierz światło dla przycisku 2."
       default: []
       selector:
@@ -91,9 +82,9 @@ blueprint:
       selector:
         action: {}
 
-    # === BUTTON 3 CONFIG ===
+    # === BUTTON 3 ===
     btn_3_light:
-      name: "(B3) Sterowanie jasnością (Opcjonalne)"
+      name: "(B3) Sterowanie jasnością"
       description: "Wybierz światło dla przycisku 3."
       default: []
       selector:
@@ -106,9 +97,9 @@ blueprint:
       selector:
         action: {}
 
-    # === BUTTON 4 CONFIG ===
+    # === BUTTON 4 ===
     btn_4_light:
-      name: "(B4) Sterowanie jasnością (Opcjonalne)"
+      name: "(B4) Sterowanie jasnością"
       description: "Wybierz światło dla przycisku 4."
       default: []
       selector:
@@ -139,31 +130,31 @@ action:
       timer_var: !input dial_timer_helper
       active_time: !input dial_active_time
       
-      # Mapowanie świateł do zmiennych
+      # Zmienne świateł
       light_1: !input btn_1_light
       light_2: !input btn_2_light
       light_3: !input btn_3_light
       light_4: !input btn_4_light
 
-  # === 1. OBSŁUGA KLIKNIĘĆ (AKTYWACJA TRYBU) ===
+  # === 1. KLIKNIĘCIA (Logika wyboru i Timera) ===
   - choose:
       - conditions: "{{ action is match('^button_[1-4]_press$') }}"
         sequence:
-          # Zapisz, który przycisk jest aktywny
+          # Zapisz ID przycisku
           - service: input_text.set_value
             target:
               entity_id: "{{ input_text_var }}"
             data:
               value: "{{ action | regex_replace(find='[^1-4]', replace='') }}"
           
-          # Uruchom Timer (okno czasowe na kręcenie)
+          # Restart Timera
           - service: timer.start
             target:
               entity_id: "{{ timer_var }}"
             data:
               duration: "{{ active_time }}"
           
-          # Wykonaj przypisaną akcję (np. Toggle światła)
+          # Wykonaj akcję użytkownika
           - choose:
               - conditions: "{{ '1' in action }}"
                 sequence: !input btn_1_action
@@ -174,15 +165,14 @@ action:
               - conditions: "{{ '4' in action }}"
                 sequence: !input btn_4_action
 
-  # === 2. OBSŁUGA OBROTU (DIAL) ===
+  # === 2. OBRÓT (Logika ściemniania) ===
   - choose:
       - conditions: 
-          - "{{ 'dial_rotate' in action }}"     # To jest obrót
-          - "{{ states(timer_var) == 'active' }}" # Timer jest aktywny
+          - "{{ 'dial_rotate' in action }}"
+          - "{{ states(timer_var) == 'active' }}"
         sequence:
           - variables:
               current_btn: "{{ states(input_text_var) }}"
-              # Określ cel (światło) na podstawie zapisanego przycisku
               target_light: >
                 {% if current_btn == '1' %} {{ light_1 }}
                 {% elif current_btn == '2' %} {{ light_2 }}
@@ -190,11 +180,9 @@ action:
                 {% elif current_btn == '4' %} {{ light_4 }}
                 {% else %} [] {% endif %}
               
-              # Określ kierunek (+/-)
               direction_multiplier: >
                 {{ 1 if 'right' in action else -1 }}
               
-              # Określ siłę kroku na podstawie prędkości (step/slow/fast)
               step_size: >
                 {% if 'fast' in action %} 30
                 {% elif 'slow' in action %} 15
@@ -202,7 +190,7 @@ action:
               
               final_pct: "{{ step_size * direction_multiplier }}"
 
-          # Wykonaj ściemnianie TYLKO jeśli wybrano światło dla tego przycisku
+          # Wyślij komendę tylko jeśli zdefiniowano światło
           - if:
               - condition: template
                 value_template: "{{ target_light != [] and target_light != None and target_light != '[]' }}"
