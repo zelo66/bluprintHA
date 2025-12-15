@@ -39,7 +39,7 @@ blueprint:
       name: Rotation Timer
       description:
         Create a timer helper to control how long rotation mode stays active
-        after button press. **Each switch requires a unique helper!**
+        after button press. Timer will restart with each rotation. **Each switch requires a unique helper!**
       selector:
         entity:
           domain:
@@ -249,6 +249,9 @@ action:
               - condition: template
                 value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
+              - service: timer.start
+                target:
+                  entity_id: "{{ timer_var }}"
               - choose:
                   - conditions:
                       - condition: template
@@ -270,6 +273,9 @@ action:
               - condition: template
                 value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
+              - service: timer.start
+                target:
+                  entity_id: "{{ timer_var }}"
               - choose:
                   - conditions:
                       - condition: template
@@ -291,6 +297,9 @@ action:
               - condition: template
                 value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
+              - service: timer.start
+                target:
+                  entity_id: "{{ timer_var }}"
               - choose:
                   - conditions:
                       - condition: template
@@ -312,6 +321,9 @@ action:
               - condition: template
                 value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
+              - service: timer.start
+                target:
+                  entity_id: "{{ timer_var }}"
               - choose:
                   - conditions:
                       - condition: template
