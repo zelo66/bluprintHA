@@ -35,26 +35,16 @@ blueprint:
           domain:
             - input_text
           multiple: false
-    last_pressed_time:
-      name: Last Pressed Time Helper
+    rotation_timer:
+      name: Rotation Timer
       description:
-        Create an input_datetime helper to track when the last button was pressed.
-        This is used for rotation timeout. **Each switch requires a unique helper!**
+        Create a timer helper to control how long rotation mode stays active
+        after button press. **Each switch requires a unique helper!**
       selector:
         entity:
           domain:
-            - input_datetime
+            - timer
           multiple: false
-    rotation_timeout:
-      name: Rotation Timeout
-      description: Time after which rotation stops working (in seconds)
-      default: 300
-      selector:
-        number:
-          min: 10
-          max: 3600
-          step: 10
-          unit_of_measurement: "seconds"
     button_1_single_press:
       name: Button 1 Single Press
       default: []
@@ -169,8 +159,7 @@ action:
   - variables:
       input_text_var: !input last_pressed
       counter_var: !input tap_counter
-      time_var: !input last_pressed_time
-      timeout_seconds: !input rotation_timeout
+      timer_var: !input rotation_timer
       action_step: "{{ trigger.payload_json.action_step_size | int(0) }}"
   - choose:
       - conditions:
@@ -195,11 +184,9 @@ action:
                 }}"
             target:
               entity_id: "{{ input_text_var }}"
-          - service: input_datetime.set_datetime
-            data:
-              datetime: "{{ now().isoformat() }}"
+          - service: timer.start
             target:
-              entity_id: "{{ time_var }}"
+              entity_id: "{{ timer_var }}"
           - service: counter.increment
             target:
               entity_id: "{{ counter_var }}"
@@ -260,7 +247,7 @@ action:
                   "{{ states(input_text_var) == '1' and trigger.payload_json.action
                   is match('^brightness_step_') }}"
               - condition: template
-                value_template: "{{ (now() - states(time_var) | as_datetime).total_seconds() < timeout_seconds }}"
+                value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
               - choose:
                   - conditions:
@@ -281,7 +268,7 @@ action:
                   "{{ states(input_text_var) == '2' and trigger.payload_json.action
                   is match('^brightness_step_') }}"
               - condition: template
-                value_template: "{{ (now() - states(time_var) | as_datetime).total_seconds() < timeout_seconds }}"
+                value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
               - choose:
                   - conditions:
@@ -302,7 +289,7 @@ action:
                   "{{ states(input_text_var) == '3' and trigger.payload_json.action
                   is match('^brightness_step_') }}"
               - condition: template
-                value_template: "{{ (now() - states(time_var) | as_datetime).total_seconds() < timeout_seconds }}"
+                value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
               - choose:
                   - conditions:
@@ -323,7 +310,7 @@ action:
                   "{{ states(input_text_var) == '4' and trigger.payload_json.action
                   is match('^brightness_step_') }}"
               - condition: template
-                value_template: "{{ (now() - states(time_var) | as_datetime).total_seconds() < timeout_seconds }}"
+                value_template: "{{ states(timer_var) == 'active' }}"
             sequence:
               - choose:
                   - conditions:
